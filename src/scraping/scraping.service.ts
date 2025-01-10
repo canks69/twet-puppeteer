@@ -5,6 +5,7 @@ import { Post } from './entities/post.entity';
 import * as nodemailer from 'nodemailer';
 import puppeteer from 'puppeteer';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { TwiterLoginDto } from './dto/twiter-login.dto';
 
 @Injectable()
@@ -59,7 +60,16 @@ export class ScrapingService {
     await page.goto('https://twitter.com/home');
 
     const cookies = await page.cookies();
-    fs.writeFileSync('cache/x.com.cookies.json', JSON.stringify(cookies));
+
+    const cacheDir = path.join(__dirname, '../../cache');
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+
+    fs.writeFileSync(
+      path.join(cacheDir, 'x.com.cookies.json'),
+      JSON.stringify(cookies),
+    );
 
     await browser.close();
 
