@@ -1,37 +1,46 @@
-# Gunakan image Node.js sebagai base image
-FROM node:18-alpine
+# Build Stage
+FROM node:20-alpine3.18 AS nest-build
 
-# Install dependensi yang dibutuhkan oleh Puppeteer
 RUN apk add --no-cache \
+    vips-dev \
     chromium \
-    nss \
+    udev \
     freetype \
-    harfbuzz \
-    ca-certificates \
     ttf-freefont \
-    nodejs \
-    npm \
-    bash
+    fontconfig \
+    nss
 
-# Variabel lingkungan untuk Puppeteer
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-# Direktori kerja aplikasi
 WORKDIR /app
 
-# Salin package.json dan package-lock.json, dan install dependensi
-COPY package.json package-lock.json ./
-RUN npm install --production
+COPY package*.json ./
 
-# Salin seluruh kode aplikasi
+RUN npm install
+
 COPY . .
 
-# Build aplikasi NestJS
 RUN npm run build
 
-# Ekspose port aplikasi
-EXPOSE 3000
 
-# Jalankan aplikasi
-CMD ["npm", "run", "start:prod"]
+# Build Prod
+FROM node:20-alpine3.18 AS production
+
+RUN apk add --no-cache \
+    chromium \
+    udev \
+    freetype \
+    ttf-freefont \
+    fontconfig \
+    nss
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install --only=production
+
+COPY --from=nest-build /app/dist ./dist
+
+ENV PUPPETEER_SKIP_DOWNLOAD true
+ENV CHROME_BIN=/usr/bin/chromium-browser
+
+CMD ["node", "./dist/main.js"]

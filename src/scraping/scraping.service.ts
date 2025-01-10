@@ -15,7 +15,10 @@ export class ScrapingService {
   ) {}
 
   async loginTwiter(loginDto: TwiterLoginDto) {
-    const browser = await puppeteer.launch({ headless: false, devtools: true });
+    const browser = await puppeteer.launch({
+      headless: false,
+    });
+
     const page = await browser.newPage();
 
     await page.goto('https://twitter.com/login');
@@ -27,6 +30,22 @@ export class ScrapingService {
       'button[class="css-175oi2r r-sdzlij r-1phboty r-rs99b7 r-lrvibr r-ywje51 r-184id4b r-13qz1uu r-2yi16 r-1qi8awa r-3pj75a r-1loqt21 r-o7ynqc r-6416eg r-1ny4l3l"]',
     );
 
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
+    if (await page.$('input[data-testid="ocfEnterTextTextInput"]')) {
+      await page.waitForSelector('input[data-testid="ocfEnterTextTextInput"]');
+      await page.type(
+        'input[data-testid="ocfEnterTextTextInput"]',
+        loginDto.phone,
+      );
+
+      await page.click('button[data-testid="ocfEnterTextNextButton"]');
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
     await page.waitForSelector('input[autocomplete="current-password"]');
     await page.type(
       'input[autocomplete="current-password"]',
